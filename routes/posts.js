@@ -45,28 +45,155 @@ router.post("/poststatus", function (req, res) {
 
 });
 //getliststatus
-router.post("/getliststatus", function (req, res) {
+
+router.post("/getliststatus2", function (req, res) {
 	if (!req.body) return res.sendStatus(400);
 	if (!req.body.id) {
 		res.send({code: 0, mes: "NULL!", data: {}});
 	} else {
 		data.postTable().findAll({
 				where: {state: "2"},
-				include: [data.userTable(), {model: data.cmtTable(), include: [data.userTable()]}, {
-					model: data.likeTable(),
-				}],
+				include: [
+					data.userTable(),
+					{model: data.cmtTable(), include: [data.userTable()], order: [['idcmt', 'ASC']]},
+
+					{model: data.likeTable(), include: [data.userTable()]}
+
+
+				],
 
 				order: [['createdAt', 'DESC']]
 			})
-			.then(arr => {
-				console.log("findAll: ", arr);
+			.then(arrr => {
+				data.followTable().findAll({
 
-				res.send({code: 1, mes: "success", data: {list: arr}});
+					where: {
+						idfb: req.body.id
+					},
+					include: [
+						{
+							model: data.userTable(),
+
+							include: [
+								{
+									model: data.postTable(),
+
+									where: {state: "1"},
+
+									include: [
+										data.userTable(),
+										{
+											model: data.cmtTable(),
+											include: [data.userTable()],
+											order: [['idcmt', 'ASC']]
+										},
+
+										{model: data.likeTable(), include: [data.userTable()]}
+
+
+									]
+								}
+							]
+						}
+					]
+				}).then(arr => {
+						//console.log("findAll: ", arr.forEach(item=>item.user.posts));
+						var ret = [];
+						data.postTable().findAll({
+								where: {
+									idfb: req.body.id,
+									state: ["1", "0"]
+								},
+								include: [
+									data.userTable(),
+									{model: data.cmtTable(), include: [data.userTable()], order: [['idcmt', 'ASC']]},
+
+									{model: data.likeTable(), include: [data.userTable()]}
+
+
+								],
+
+								order: [['createdAt', 'DESC']]
+							})
+							.then(arrme => {
+								if (arr == null || arr.length == 0) {
+									//	res.send({code: 1, mes: "success", data: {list: ret}})
+									ret = ret.concat(arrr);
+									ret = ret.concat(arrme);
+									var arrs = ret.sort(function (b, a) {
+										return parseFloat(a.idpost) - parseFloat(b.idpost);
+									});
+									var start = req.body.page * req.body.pagesize;
+									var end = start + req.body.pagesize;
+									console.log("GETLISTSIZE", start, end)
+									res.send({code: 1, mes: "success", data: {list: arrs.slice(start, end)}});
+
+
+									//res.send({code: 1, mes: "success", data: {list: arrs}});
+
+
+								}
+								var flarr = [];
+								var s = arrr;
+								for (var i = 0; i < arr.length; i++) {
+									flarr = flarr.concat(arr[i].id2);
+									if (i == arr.length - 1) {
+										//	res.send({code: 1, mes: "success", data: {list: ret}})
+										data.postTable().findAll({
+											where: {
+												idfb: flarr,
+												state: "1"
+											},
+											include: [
+												data.userTable(),
+												{
+													model: data.cmtTable(),
+													include: [data.userTable()],
+													order: [['idcmt', 'ASC']]
+												},
+
+												{model: data.likeTable(), include: [data.userTable()]}
+
+
+											],
+
+											order: [['createdAt', 'DESC']]
+										}).then(data => {
+											ret = ret.concat(data);
+											ret = ret.concat(s);
+											var arrs = ret.sort(function (b, a) {
+												return parseFloat(a.idpost) - parseFloat(b.idpost);
+											});
+											var start = req.body.page * req.body.pagesize;
+											var end = start + req.body.pagesize;
+											console.log("GETLISTSIZE 2", flarr)
+											res.send({code: 1, mes: "success", data: {list: arrs.slice(start, end)}});
+										}).catch(err => res.send({code: 0, mes: "Fail!", data: err.message}))
+
+
+										//res.send({code: 1, mes: "success", data: {list: arrs}});
+
+
+									}
+								}
+								console.log("GETLISTME", arr.length)
+							}).catch(errme => {
+							console.log("GETLISTME", "FAIl", errme.message);
+							res.send({code: 0, mes: "Fail!", data: errme.message});
+						})
+
+
+					})
+					.catch(err => {
+						console.log("findAll FAIL: ", err.message);
+						res.send({code: 0, mes: "Fail!", data: err.message});
+					});
+
 
 			})
 			.catch(err => {
 				console.log("findAll FAIL: ", err.message);
-				res.send({code: 0, mes: "Fail!", data: {}});
+				res.send({code: 0, mes: "Fail!", data: err.message});
 			});
 
 
@@ -75,6 +202,75 @@ router.post("/getliststatus", function (req, res) {
 
 });
 
+router.post("/getliststatus", function (req, res) {
+
+	if (!req.body) return res.sendStatus(400);
+	if (!req.body.id) {
+		res.send({code: 0, mes: "NULL!", data: {}});
+	} else {
+		console.log("1")
+		var ret = [];
+		data.findPubPost(function (public) {
+			ret = ret.concat(public);
+			console.log("2")
+
+			data.getMynonPublicPost(req.body.id, function (mynonpublic) {
+				ret = ret.concat(mynonpublic);
+				console.log("3")
+				data.findMyFollow(req.body.id, function (myfl) {
+					console.log("4")
+					if (myfl == null || myfl.length == 0) {
+						//	res.send({code: 1, mes: "success", data: {list: ret}})
+
+						var arrs = ret.sort(function (b, a) {
+							return parseFloat(a.idpost) - parseFloat(b.idpost);
+						});
+						var start = req.body.page * req.body.pagesize;
+						var end = start + req.body.pagesize;
+						console.log("GETLISTSIZE", start, end)
+						res.send({code: 1, mes: "success", data: {list: arrs.slice(start, end)}});
+
+
+					}
+					for (var i = 0; i < myfl.length; i++) {
+						if (myfl[i].user == null) {
+							console.log("GETLIST NULL");
+						}
+						else {
+							ret = ret.concat(myfl[i].user.posts);
+							console.log("GETLIST ", myfl[i].user.idfb);
+						}
+						if (i == myfl.length - 1) {
+							console.log("GETLISTSIZE 2", ret.length)
+							var arrs = ret.sort(function (b, a) {
+								return parseFloat(a.idpost) - parseFloat(b.idpost);
+							});
+							var start = req.body.page * req.body.pagesize;
+							var end = start + req.body.pagesize;
+
+							res.send({code: 1, mes: "success", data: {list: arrs.slice(start, end)}});
+							//res.send({code: 1, mes: "success", data: {list: arrs}});
+						}
+					}
+
+
+				}, function (err) {
+					res.send({code: 0, mes: "error", data: err.message});
+				})
+			}, function (err) {
+				res.send({code: 0, mes: "error", data: err.message});
+			});
+
+
+		}, function (err) {
+			res.send({code: 0, mes: "error", data: err.message});
+		})
+
+
+	}
+	console.log(req.body);
+
+});
 router.post("/getstatus", function (req, res) {
 	if (!req.body) return res.sendStatus(400);
 	if (!req.body.id) {
@@ -84,9 +280,13 @@ router.post("/getstatus", function (req, res) {
 		data.postTable().findOne(
 			{
 				where: {idpost: req.body.id},
-				include: [data.userTable(), {model: data.cmtTable(), include: [data.userTable()]}, {
-					model: data.likeTable(),
+				include: [data.userTable(), {
+					model: data.cmtTable(),
+					include: [data.userTable()],
+					order: [['idcmt', 'ASC']]
+				}, {
 
+					model: data.likeTable(), include: [data.userTable()], order: [['idcmt', 'ASC']]
 				}]
 			}
 		).then(post => {
@@ -104,20 +304,7 @@ router.post("/getstatus", function (req, res) {
 				console.log("findONE FAIL: ", err.message);
 				res.send({code: 0, mes: "Fail!", data: {}});
 			});
-		// data.postTable().findAll({
-		// 	raw: true,
-		// 	where: {idpost: req.body.id},
-		// 	include: [data.userTable(),data.cmtTable()]
-		// }).then(post => {
-		// 		console.log("findONE: ", post);
-		// 		console.log("RETURN STATUS: ");
-		// 		res.send({code: 1, mes: "success", data: post});
-		//
-		// 	})
-		// 	.catch(err => {
-		// 		console.log("findONE FAIL: ", err.message);
-		// 		res.send({code: 0, mes: "Fail!", data: {}});
-		// 	});
+
 
 	}
 	console.log(req.body);
@@ -249,28 +436,30 @@ router.post("/comment", function (req, res) {
 	console.log(req.body);
 	if (req.body.act == "del") {
 
-		data.cmtTable().findOne({
+
+		data.cmtTable().destroy({
 			where: {
-				idcmt: req.body.idcmt
-			},
-			order: [['createdAt', 'DESC']]
-		}).then(result => {
+				idcmt: req.body.idcmt,
+				idpost: req.body.idpost
+				//,idfb: req.body.idfb
+			}
 
-
-				result.destroy();
+		}).then(a => {
+			console.log("CMT", a);
+			if (a == 0) {
+				res.send({code: 0, mes: "Fail!", data: {}})
+			} else
 				data.cmtTable().findAll({
 					where: {idpost: req.body.idpost},
 					include: [data.userTable()]
+					, order: [['idcmt', 'ASC']]
 				}).then(comments => res.send({code: 1, mes: "Success!", data: {comments}}))
 					.catch(err => {
 						res.send({code: 0, mes: "Fail!", data: err.toString()})
 					})
-			}
-			)
-			.catch(err => {
-					res.send({code: 0, mes: "Fail!", data: {}});
-				}
-			)
+		}).catch(a => res.send({code: 0, mes: "Fail!", data: {}}));
+
+
 	}
 
 	if (req.body.act == "create") {
@@ -282,7 +471,7 @@ router.post("/comment", function (req, res) {
 			data.cmtTable().findAll({
 				where: {idpost: req.body.idpost},
 				include: [data.userTable()],
-				order: [['createdAt', 'DESC']]
+				order: [['idcmt', 'ASC']]
 			}).then(comments => res.send({code: 1, mes: "Success!", data: {comments}}))
 				.catch(err => {
 					res.send({code: 0, mes: "Fail!", data: err.toString()})
@@ -292,5 +481,51 @@ router.post("/comment", function (req, res) {
 		})
 
 	}
-})
+});
+
+
+router.post("/search", function (req, res, next) {
+	if (!req.body) return res.sendStatus(400);
+	console.log(req.body);
+	var name = '%' + req.body.key + '%';
+	console.log("SEARCH", name);
+	data.postTable().findAll({
+
+		where: {
+			rtag: {
+				[(data.Ops()).like]: name
+			},
+			state: ["1", "2"]
+		}
+	}).then(arr => res.send({code: 1, mes: "Success", data: {list: arr}}))
+		.catch(err => {
+
+			res.send({code: 0, mes: "Fail to get data!", data: err.message});
+		})
+//TODO
+
+});
+router.post("/delete", function (req, res, next) {
+	if (!req.body) return res.sendStatus(400);
+	console.log(req.body);
+
+	data.postTable().destroy({
+		where: {
+			idfb: req.body.idfb,
+			idpost: req.body.idpost
+			//,idfb: req.body.idfb
+		}
+
+	}).then(a => {
+
+		if (a == 0) {
+			res.send({code: 0, mes: "Fail!", data: {}})
+		} else
+			res.send({code: 1, mes: "Success!", data: {}});
+
+	}).catch(a => res.send({code: 0, mes: "Fail!", data: {}}));
+
+//TODO
+
+});
 module.exports = router;

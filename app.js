@@ -34,19 +34,21 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 const DATABASE = require('./modules/database');
 //FACEAPI---------------------------------------------------------------------------------------------------------------
-
-const MCSFACEAPI = require('./modules/face-api');
-const key = "6dcb5374a96048acadb4f4981578b478";
-const sever = "WCUS";
-var mcsfapi = new MCSFACEAPI(key, sever);
+console.log("START APP.JS");
+// const MCSFACEAPI = require('./modules/face-api');
+// const key = "6dcb5374a96048acadb4f4981578b478";
+// const sever = "WCUS";
+// var mcsfapi = new MCSFACEAPI(key, sever);
 
 
 //-------------------------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------------------------------------------------------------
-app.listen(port, function () {
-	console.log("LISTEN ", port);
+// app.listen(port, function () {
+// 	console.log("LISTEN ",window.location.hostname, port);
+// });
+app.listen(process.env.PORT || port, function(){
+	console.log("LISTEN server listening on port %d in %s mode", this.address().port, app.settings.env);
 });
-
 
 

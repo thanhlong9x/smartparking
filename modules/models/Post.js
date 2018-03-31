@@ -9,8 +9,7 @@ module.exports = function(dbConn, sequeliz) {
 		urlimage: sequeliz.ARRAY(sequeliz.STRING(1234)),
 		cap: sequeliz.STRING,
 		state: sequeliz.STRING,
-		tag: sequeliz.ARRAY(sequeliz.STRING)
-
-
+		tag: sequeliz.ARRAY(sequeliz.STRING),
+		rtag:sequeliz.STRING(1234)
 	});
 }

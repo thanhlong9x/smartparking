@@ -9,6 +9,11 @@ const DATABASE = require('../modules/database');
 var data = DATABASE();
 //--------------------------------------------------------------------------------------------------------------
 /* GET home page. */
+router.get('/', function (req, res, next) {
+
+	res.send('respond with a resource');
+
+});
 router.post('/', function (req, res, next) {
 	console.log(req.body);
 	data.postTable().findAll({raw:true,include:[data.userTable(),data.cmtTable()]}).then(post => {
