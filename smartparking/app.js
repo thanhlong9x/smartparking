@@ -1,41 +1,54 @@
-var createError = require('http-errors');
 var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-
+var bodyParser = require('body-parser');
+var index = require('./routes/index');
+var users = require('./routes/users');
+var posts = require('./routes/posts')
+var port = 5678;
 var app = express();
+app.use("/assets", express.static(__dirname + "/public"));
+app.set("views", "./views");
+// Add headers---------------------------------------------------------------------------------------------------------------
+app.use(function (req, res, next) {
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
+    // Website you wish to allow to connect
+    res.setHeader('Access-Control-Allow-Origin', '*');
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+    // Request methods you wish to allow
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+    // Request headers you wish to allow
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+    // Set to true if you need the website to include cookies in the requests sent
+    // to the API (e.g. in case you use sessions)
+    res.setHeader('Access-Control-Allow-Credentials', true);
+
+    // Pass to next layer of middleware
+    next();
+});
+app.use('/', index);
+app.use('/users', users);
+app.use('/posts/', posts)
+//body parser---------------------------------------------------------------------------------------------------------------
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
+const DATABASE = require('./modules/database');
+//FACEAPI---------------------------------------------------------------------------------------------------------------
+console.log("START APP.JS");
+// const MCSFACEAPI = require('./modules/face-api');
+// const key = "6dcb5374a96048acadb4f4981578b478";
+// const sever = "WCUS";
+// var mcsfapi = new MCSFACEAPI(key, sever);
+
+
+//-------------------------------------------------------------------------------------------------------------------------
+
+//-------------------------------------------------------------------------------------------------------------------------------
+// app.listen(port, function () {
+// 	console.log("LISTEN ",window.location.hostname, port);
+// });
+app.listen(process.env.PORT || port, function(){
+	console.log("LISTEN server listening on port %d in %s mode", this.address().port, app.settings.env);
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
-
-module.exports = app;
