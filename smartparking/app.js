@@ -2,7 +2,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var index = require('./routes/index');
 var users = require('./routes/users');
-var posts = require('./routes/posts')
+
 var port = 5678;
 var app = express();
 app.use("/assets", express.static(__dirname + "/public"));
@@ -28,7 +28,7 @@ app.use(function (req, res, next) {
 });
 app.use('/', index);
 app.use('/users', users);
-app.use('/posts/', posts)
+
 //body parser---------------------------------------------------------------------------------------------------------------
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
