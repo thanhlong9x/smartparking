@@ -36,13 +36,10 @@ db.sync();
 function Sequelize() {
 	const KEY = "dsadas";
 
-	function createUser(userFb, next, errs) {
-		console.log("START CREAT USER ", userFb)
+	function createUser(id, next, errs) {
+
 		usertable.create({
-			idfb: userFb.id,
-			name: userFb.name,
-			gender: userFb.gender,
-			urlavata: userFb.picture.data.url
+			idfb: id
 		}).then(user => {
 				console.log("CREAT USER : ", user.get({plain: true}));
 				next(user);
@@ -93,7 +90,7 @@ function Sequelize() {
 
 	return {
 
-
+        getDatabase,
 		Ops,
 		userTable,
 		createUser,
